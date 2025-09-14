@@ -1,6 +1,7 @@
 import os
 import requests
 import time
+import threading
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 
@@ -16,6 +17,64 @@ HEADERS = {
     "HTTP-Referer": os.getenv("HTTP_REFERER", "https://www.clsp.jhu.edu/"),
     "X-Title": os.getenv("X_TITLE", "Social Reasoning NLI")
 }
+
+# Global, thread-safe rate limiter for OpenRouter API calls
+def _parse_int_env(name, default):
+    try:
+        value = int(os.getenv(name, str(default)))
+        return value if value >= 0 else default
+    except Exception:
+        return default
+
+def _parse_float_env(name, default):
+    try:
+        value = float(os.getenv(name, str(default)))
+        return value if value >= 0 else default
+    except Exception:
+        return default
+
+class APICallRateLimiter:
+    def __init__(self, calls_per_pause: int = 160, sleep_seconds: float = 5.0):
+        self.calls_per_pause = int(calls_per_pause) if calls_per_pause is not None else 0
+        self.sleep_seconds = float(sleep_seconds) if sleep_seconds is not None else 0.0
+        self.counter = 0
+        self.lock = threading.Lock()
+        self.cond = threading.Condition(self.lock)
+        self.pause_until = 0.0
+
+    def before_call(self):
+        # If disabled, still count but don't sleep
+        if self.calls_per_pause <= 0 or self.sleep_seconds <= 0:
+            with self.lock:
+                self.counter += 1
+            return
+
+        should_sleep = False
+        with self.lock:
+            now = time.monotonic()
+            while now < self.pause_until:
+                remaining = self.pause_until - now
+                # Wait until current pause has elapsed
+                self.cond.wait(timeout=remaining)
+                now = time.monotonic()
+
+            self.counter += 1
+            if self.counter % self.calls_per_pause == 0:
+                self.pause_until = time.monotonic() + self.sleep_seconds
+                should_sleep = True
+                print(f"[RATE-LIMIT] Reached {self.counter} OpenRouter API calls. Pausing for {self.sleep_seconds} seconds...")
+
+        if should_sleep:
+            time.sleep(self.sleep_seconds)
+            with self.lock:
+                # Clear pause and wake up any waiting threads
+                self.pause_until = 0.0
+                self.cond.notify_all()
+
+# Configure limiter via environment variables
+_CALLS_PER_PAUSE = _parse_int_env("OPENROUTER_CALLS_PER_PAUSE", 160)
+_PAUSE_SECONDS = _parse_float_env("OPENROUTER_PAUSE_SECONDS", 5.0)
+_RATE_LIMITER = APICallRateLimiter(_CALLS_PER_PAUSE, _PAUSE_SECONDS)
 
 def call_openrouter_chat_completion(model_id: str, system_prompt: str, user_prompt: str, max_retries: int = 3, timeout: int = 120):
     """Calls the OpenRouter API with chat completions."""
@@ -35,6 +94,7 @@ def call_openrouter_chat_completion(model_id: str, system_prompt: str, user_prom
 
     for attempt in range(max_retries):
         try:
+            _RATE_LIMITER.before_call()
             response = requests.post(
                 f"{OPENROUTER_API_BASE}/chat/completions",
                 headers=HEADERS,
@@ -113,6 +173,7 @@ def deepseek_r1_completion(prompt):
         "max_tokens": 5000
     }
     try:
+        _RATE_LIMITER.before_call()
         response = requests.post(
             f"{OPENROUTER_API_BASE}/chat/completions",
             headers=HEADERS,
