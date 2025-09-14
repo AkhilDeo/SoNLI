@@ -26,7 +26,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.globals import set_llm_cache
 
 # Local imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from prompts.supporting_explanations_no_q import supporting_explanations_prompt_with_no_question
 from prompts.opposing_explanations_no_q import opposing_explanations_prompt_with_no_question
 from prompts.judge import scoring_prompt
@@ -709,10 +709,10 @@ def main():
     # Load data
     print("Loading input data...")
     if args.eval_split:
-        input_file = "/home/adeo1/SoNLI/datasets/socialnli/socialnli_human_eval_split.json"
+        input_file = "datasets/socialnli/socialnli_human_eval_split.json"
         print("[INFO] Using eval split dataset")
     else:
-        input_file = "/home/adeo1/SoNLI/datasets/socialnli/socialnli_main_split_not_scored.json"
+        input_file = "datasets/socialnli/socialnli_main_split_not_scored.json"
         print("[INFO] Using main split dataset")
     
     try:
@@ -747,9 +747,9 @@ def main():
 
     # Set up timestamped output directory
     if args.eval_split:
-        output_base_dir = f"/home/adeo1/SoNLI/outputs/exp_one_eval_{args.eval_samples}samples_{run_timestamp}"
+        output_base_dir = f"outputs/exp_one_eval_{run_timestamp}_{args.eval_samples}_samples"
     else:
-        output_base_dir = f"/home/adeo1/SoNLI/outputs/exp_one_{run_timestamp}"
+        output_base_dir = f"outputs/exp_one_{run_timestamp}"
     os.makedirs(output_base_dir, exist_ok=True)
 
     # Initialize language cache (clear previous cache so each run starts fresh)
