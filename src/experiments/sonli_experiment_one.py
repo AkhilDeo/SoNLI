@@ -46,14 +46,14 @@ EXPLANATION_MODELS_CONFIG = {
     "gpt-4o-mini": {"type": "openai", "model_id": "gpt-4o-mini"},
     "llama-3.1-8b-instruct": {"type": "openrouter", "model_id": "meta-llama/llama-3.1-8b-instruct"},
     "deepseek-v3-chat": {"type": "openrouter", "model_id": "deepseek/deepseek-chat-v3-0324"},
-    "llama-3.3-70b-instruct": {"type": "openrouter", "model_id": "meta-llama/llama-3.3-70b-instruct"},
+    "llama-3.1-70b-instruct": {"type": "openrouter", "model_id": "meta-llama/llama-3.1-70b-instruct"},
     "qwen3-32b": {"type": "openrouter", "model_id": "qwen/qwen3-32b"}
 }
 
 # HuggingFace model mappings for vLLM
 HUGGINGFACE_MODEL_MAPPING = {
     "llama-3.1-8b-instruct": "meta-llama/Llama-3.1-8B-Instruct",
-    "llama-3.3-70b-instruct": "meta-llama/Llama-3.3-70B-Instruct", 
+    "llama-3.1-70b-instruct": "meta-llama/Llama-3.1-70B-Instruct", 
     "qwen3-32b": "Qwen/Qwen2.5-32B-Instruct",
     "deepseek-v3-chat": "deepseek-ai/DeepSeek-V3-Base"  # Adjust based on available model
 }
