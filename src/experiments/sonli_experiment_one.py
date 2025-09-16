@@ -17,7 +17,6 @@ import copy
 
 from dotenv import load_dotenv
 
-# Load environment variables FIRST before importing modules that need them
 load_dotenv()
 
 from langchain_community.cache import SQLiteCache
@@ -25,14 +24,12 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.globals import set_llm_cache
 
-# Local imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from prompts.supporting_explanations_no_q import supporting_explanations_prompt_with_no_question
 from prompts.opposing_explanations_no_q import opposing_explanations_prompt_with_no_question
 from prompts.judge import scoring_prompt
 from utils.openrouter_client import call_openrouter_chat_completion, deepseek_r1_completion, OpenRouterLLM
 
-# Optional vLLM imports - will be checked during runtime
 try:
     from vllm import LLM, SamplingParams
     VLLM_AVAILABLE = True
@@ -46,6 +43,7 @@ EXPLANATION_MODELS_CONFIG = {
     "gpt-4o-mini": {"type": "openai", "model_id": "gpt-4o-mini"},
     "llama-3.1-8b-instruct": {"type": "openrouter", "model_id": "meta-llama/llama-3.1-8b-instruct"},
     "deepseek-v3-chat": {"type": "openrouter", "model_id": "deepseek/deepseek-chat-v3-0324"},
+    "deepseek-r1": {"type": "openrouter", "model_id": "deepseek/deepseek-r1"},
     "llama-3.1-70b-instruct": {"type": "openrouter", "model_id": "meta-llama/llama-3.1-70b-instruct"},
     "qwen3-32b": {"type": "openrouter", "model_id": "qwen/qwen3-32b"}
 }
@@ -55,7 +53,8 @@ HUGGINGFACE_MODEL_MAPPING = {
     "llama-3.1-8b-instruct": "meta-llama/Llama-3.1-8B-Instruct",
     "llama-3.1-70b-instruct": "meta-llama/Llama-3.1-70B-Instruct", 
     "qwen3-32b": "Qwen/Qwen2.5-32B-Instruct",
-    "deepseek-v3-chat": "deepseek-ai/DeepSeek-V3-Base"  # Adjust based on available model
+    "deepseek-v3-chat": "deepseek-ai/DeepSeek-V3-Base",  # Adjust based on available model
+    "deepseek-r1": "deepseek-ai/DeepSeek-R1-Base"  # Adjust based on available model
 }
 
 # Consistent generation parameters
@@ -97,8 +96,6 @@ def parse_judge_score(judge_response_content: str) -> int:
             print(f"[WARN] No SCORE: X pattern or numbers found in judge response: '{judge_response_content[:100]}...'")
         return -1
 
-# UNLIScorer removed - focusing on LLM-as-judge only for this experiment
-
 class VLLMClient:
     """vLLM-based client for local inference."""
     
@@ -110,7 +107,6 @@ class VLLMClient:
         self.tensor_parallel_size = tensor_parallel_size
         
         print(f"Initializing vLLM client for {model_path} with {tensor_parallel_size} GPUs...")
-        # Prefer bfloat16 on A100s (ba100 partition) to reduce memory, fall back to auto if unsupported
         try:
             self.llm = LLM(
                 model=model_path,
@@ -120,7 +116,6 @@ class VLLMClient:
                 gpu_memory_utilization=0.90
             )
         except TypeError:
-            # Older vLLM versions may not support dtype / gpu_memory_utilization args
             self.llm = LLM(
                 model=model_path,
                 tensor_parallel_size=tensor_parallel_size,
@@ -146,7 +141,6 @@ class VLLMClient:
         else:
             raise ValueError("Last message in 'messages' must have a 'content' attribute or be a string.")
         
-        # Generate response
         outputs = self.llm.generate([prompt], self.sampling_params)
         response_text = ""
         try:
@@ -155,7 +149,6 @@ class VLLMClient:
         except Exception:
             response_text = ""
         
-        # Return in HumanMessage format to maintain compatibility
         class MockResponse:
             def __init__(self, content):
                 self.content = content
@@ -169,7 +162,6 @@ def create_llm_client(model_name: str, config: Dict, inference_method: str, tens
     Open source models use inference_method to decide: openrouter vs local GPU serving.
     """
     
-    # OpenAI models ALWAYS use OpenAI API directly, regardless of inference_method
     if config["type"] == "openai":
         return ChatOpenAI(
             model=config["model_id"],
@@ -178,7 +170,6 @@ def create_llm_client(model_name: str, config: Dict, inference_method: str, tens
             max_tokens=MAX_TOKENS
         )
     
-    # For open source models, use inference_method to decide serving approach
     elif config["type"] == "openrouter":
         if inference_method == "openrouter":
             return OpenRouterLLM(model_id=config["model_id"])
@@ -220,7 +211,6 @@ def generate_single_explanation(llm_client, scene_dialogue: str, inference: str,
             print(f"Max retries reached after error, using default explanation: '{default_explanation}'")
             return default_explanation
     
-    # Generate explanation based on type
     if explanation_type == "supporting":
         prompt_str = supporting_explanations_prompt_with_no_question(
             scene_dialogue=scene_dialogue,
@@ -406,7 +396,6 @@ def call_model_for_judge(llm_client, prompt: str) -> Dict[str, Any]:
     """Call the model client for judge scoring, handling different client types."""
     try:
         if isinstance(llm_client, ChatOpenAI):
-            # OpenAI/OpenRouter client
             messages = [HumanMessage(content=prompt)]
             response = llm_client.invoke(messages)
             content = response.content if hasattr(response, 'content') else str(response)
@@ -414,14 +403,12 @@ def call_model_for_judge(llm_client, prompt: str) -> Dict[str, Any]:
                 "choices": [{"message": {"content": content}}]
             }
         elif isinstance(llm_client, VLLMClient):
-            # vLLM client
             response = llm_client.invoke([HumanMessage(content=prompt)])
             content = response.content if hasattr(response, 'content') else str(response)
             return {
                 "choices": [{"message": {"content": content}}]
             }
         elif isinstance(llm_client, OpenRouterLLM):
-            # OpenRouter client
             messages = [HumanMessage(content=prompt)]
             response = llm_client.invoke(messages)
             content = response.content if hasattr(response, 'content') else str(response)
@@ -429,12 +416,10 @@ def call_model_for_judge(llm_client, prompt: str) -> Dict[str, Any]:
                 "choices": [{"message": {"content": content}}]
             }
         else:
-            # Fallback: try to call as a function
             response = llm_client(prompt)
             if isinstance(response, dict) and "choices" in response:
                 return response
             else:
-                # Assume it's a string response
                 return {
                     "choices": [{"message": {"content": str(response)}}]
                 }
@@ -451,12 +436,11 @@ def process_single_model(model_name: str, llm_client, inferences_data: List[Dict
     
     print(f"\n=== Processing Model: {model_name} ===")
     
-    # Create model-specific output directory
     model_output_dir = os.path.join(output_base_dir, model_name)
     os.makedirs(model_output_dir, exist_ok=True)
     print(f"Model output directory: {model_output_dir}")
     
-    # Stage 1a: Generate Supporting Explanations (All Concurrent)
+    # Generate Supporting Explanations
     print(f"--- Stage 1a: Generating Supporting Explanations for {model_name} ---")
     supporting_tasks = []
     for item_idx, inference_item in enumerate(inferences_data):
@@ -471,7 +455,6 @@ def process_single_model(model_name: str, llm_client, inferences_data: List[Dict
             "inference": inference
         })
 
-    # Dictionary to store completed explanations by item_idx
     processed_entries_by_idx = {}
     stage1a_tasks_completed_count = 0
 
@@ -509,7 +492,6 @@ def process_single_model(model_name: str, llm_client, inferences_data: List[Dict
                     stage1a_tasks_completed_count += 1
 
                     if checkpoint_interval > 0 and stage1a_tasks_completed_count % checkpoint_interval == 0:
-                        # Convert to list for checkpoint
                         entries_list = [processed_entries_by_idx[i] for i in sorted(processed_entries_by_idx.keys())]
                         save_checkpoint(entries_list, "stage1a_partial", run_timestamp, stage1a_tasks_completed_count, model_output_dir)
                 except Exception as e:
@@ -518,7 +500,7 @@ def process_single_model(model_name: str, llm_client, inferences_data: List[Dict
 
     print(f"Stage 1a Complete for {model_name}: Generated supporting explanations for {len(processed_entries_by_idx)} items.")
 
-    # Stage 1b: Generate Opposing Explanations (All Concurrent)
+    # Generate Opposing Explanations
     print(f"--- Stage 1b: Generating Opposing Explanations for {model_name} ---")
     opposing_tasks = []
     for item_idx, inference_item in enumerate(inferences_data):
@@ -554,28 +536,25 @@ def process_single_model(model_name: str, llm_client, inferences_data: List[Dict
                 original_task_info = opposing_tasks[task_idx]
                 try:
                     opposing_explanation = future.result()
-                    # Update the existing entry with opposing explanation
                     item_idx = original_task_info["item_idx"]
                     if item_idx in processed_entries_by_idx:
                         processed_entries_by_idx[item_idx]["opposing_explanation"] = opposing_explanation
                         stage1b_tasks_completed_count += 1
 
                         if checkpoint_interval > 0 and stage1b_tasks_completed_count % checkpoint_interval == 0:
-                            # Convert to list for checkpoint
                             entries_list = [processed_entries_by_idx[i] for i in sorted(processed_entries_by_idx.keys())]
                             save_checkpoint(entries_list, "stage1b_partial", run_timestamp, stage1b_tasks_completed_count, model_output_dir)
                 except Exception as e:
                     print(f"[ERROR] Stage 1b: Error generating opposing explanation for item index {original_task_info['item_idx']}, model {original_task_info['model_name']}: {e}")
                 pbar.update(1)
 
-    # Convert back to list for further processing
     all_processed_entries = [processed_entries_by_idx[i] for i in sorted(processed_entries_by_idx.keys())]
     
     if all_processed_entries:
         save_checkpoint(all_processed_entries, "stage1_complete", run_timestamp, len(all_processed_entries), model_output_dir)
     print(f"Stage 1 Complete for {model_name}: Generated explanations for {len(all_processed_entries)} items.")
 
-    # Stage 2a: Score Supporting Explanations with Judge Model (All Concurrent)
+    # Score Supporting Explanations with Judge Model
     print(f"--- Stage 2a: Scoring Supporting Explanations with Judge Model for {model_name} ---")
     if not all_processed_entries:
         print(f"No explanations to score with Judge for {model_name}. Skipping Stage 2.")
@@ -622,7 +601,7 @@ def process_single_model(model_name: str, llm_client, inferences_data: List[Dict
 
             print(f"Stage 2a Complete for {model_name}: Judge scoring of supporting explanations finished.")
 
-            # Stage 2b: Score Opposing Explanations with Judge Model (All Concurrent)
+            # Score Opposing Explanations with Judge Model
             print(f"--- Stage 2b: Scoring Opposing Explanations with Judge Model for {model_name} ---")
             stage2b_tasks_completed_count = 0
             
@@ -665,7 +644,6 @@ def process_single_model(model_name: str, llm_client, inferences_data: List[Dict
                             
         except KeyboardInterrupt:
             print("\n[WARN] KeyboardInterrupt received during Stage 2. Attempting graceful shutdown...")
-            # No direct future cancellation in ThreadPoolExecutor; proceed to save partials
             try:
                 save_checkpoint(all_processed_entries, "stage2_partial_interrupt", run_timestamp, len(all_processed_entries), model_output_dir)
                 print("[INFO] Saved partial checkpoint after interrupt.")
@@ -676,9 +654,6 @@ def process_single_model(model_name: str, llm_client, inferences_data: List[Dict
         if all_processed_entries:
             save_checkpoint(all_processed_entries, "stage2_complete", run_timestamp, len(all_processed_entries), model_output_dir)
         print(f"Stage 2 Complete for {model_name}: Judge scoring finished.")
-
-    # Stage 3: UNLI scoring removed - focusing on LLM-as-judge only
-    print(f"--- Stage 3: Skipped UNLI scoring (using LLM-as-judge only) for {model_name} ---")
 
     return all_processed_entries
 
@@ -712,7 +687,7 @@ def main():
         input_file = "datasets/socialnli/socialnli_human_eval_split.json"
         print("[INFO] Using eval split dataset")
     else:
-        input_file = "datasets/socialnli/socialnli_main_split_not_scored.json"
+        input_file = "datasets/socialnli/socialnli_main_split.json"
         print("[INFO] Using main split dataset")
     
     try:
@@ -729,7 +704,6 @@ def main():
 
     # Apply sampling, test mode, or limit
     if args.eval_split:
-        # Sample from eval split
         import random
         if args.eval_samples > 0 and args.eval_samples < len(inferences_data):
             print(f"[INFO] Sampling {args.eval_samples} items from eval split")
@@ -776,13 +750,11 @@ def main():
 
         config = EXPLANATION_MODELS_CONFIG[model_name]
         
-        # Check if model is available for the chosen inference method
         if args.inference_method == "huggingface" and config["type"] == "openrouter" and model_name not in HUGGINGFACE_MODEL_MAPPING:
             print(f"[WARN] Open source model '{model_name}' not available for HuggingFace inference. Skipping.")
             continue
         
         try:
-            # Determine actual method used
             if config["type"] == "openai":
                 actual_method = "OpenAI API (direct)"
             elif config["type"] == "openrouter":
@@ -793,13 +765,12 @@ def main():
             print(f"\nInitializing {model_name} ({config['type']}) via {actual_method}...")
             llm_client = create_llm_client(model_name, config, args.inference_method, args.num_gpus)
             
-            # Process model
             model_processed_entries = process_single_model(
                 model_name, llm_client, inferences_data, 
                 args.max_workers, run_timestamp, output_base_dir, args.checkpoint_interval
             )
             
-            # Stage 4: Restructure for Final Output
+            # Restructure for Final Output
             print(f"--- Stage 4: Restructuring Data for Output ({model_name}) ---")
             original_item_map = {idx: {**item, "explanations_from_models": []} for idx, item in enumerate(inferences_data)}
 
@@ -822,11 +793,11 @@ def main():
 
             final_outputs = [original_item_map[i] for i in sorted(original_item_map.keys())]
             
-            # Stage 5: Add Bayes Scores
+            # Add Bayes Scores
             print(f"--- Stage 5: Adding Bayes Scores ({model_name}) ---")
             final_outputs_with_bayes = add_bayes_scores(final_outputs)
             
-            # Stage 6: Save Results and Plot
+            # Save Results and Plot
             print(f"--- Stage 6: Saving Results and Plotting ({model_name}) ---")
             model_output_dir = os.path.join(output_base_dir, model_name)
             results_dir = os.path.join(model_output_dir, "results")
@@ -850,7 +821,6 @@ def main():
             print(f"[ERROR] Failed to process model '{model_name}': {e}")
             continue
         finally:
-            # Best-effort GPU memory cleanup when switching models
             try:
                 import gc
                 gc.collect()
