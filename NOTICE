@@ -1,0 +1,6 @@
+SocialNLI
+Copyright (c) 2025 Johns Hopkins University
+
+This product includes data derived from the FriendsQA dataset (Apache License 2.0). We filtered the original FriendsQA question-answer pairs and augmented them with additional prompts, hypotheses, and annotations to foreground sarcasm and related social inference phenomena.
+
+The original FriendsQA license and notice are available at third_party_licenses/FriendsQA-LICENSE.txt and third_party_licenses/FriendsQA-NOTICE.txt.
