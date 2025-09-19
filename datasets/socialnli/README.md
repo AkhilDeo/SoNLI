@@ -61,8 +61,8 @@ The JSON files contain UTF-8 text and can be parsed with standard Python tooling
 
 ## Recommended usage
 - Use `auto.json` for model training or prompt-based fine-tuning. It covers the full label spectrum and contains the counterfactual explanations needed to reproduce the Bayes scoring procedure.
-- Evaluate on `eval.json` by comparing predicted plausibility scores against `human_annotated_score` (MAE, Pearson, or thresholded accuracy at 0.6 as in the paper). Human explanations may also be used for qualitative studies.
+- Evaluate on `eval.json` by comparing predicted plausibility scores against `human_annotated_score` (MAE, Pearson, or thresholded accuracy). Human explanations may also be used for qualitative studies.
 - The raw judge messages allow you to swap in alternative scoring functions if desired. If you recompute scores, update `counterfactual_score` accordingly.
 
 ## Licensing
-All annotations and metadata in this directory are licensed under the Apache License 2.0 (see the repository `LICENSE`). This directory incorporates content derived from FriendsQA, which remains under Apache 2.0 (original license and notice reproduced in `third_party_licenses/FriendsQA-APACHE-2.0.txt`). Dialogue excerpts remain subject to the underlying show rightsholders.
+This directory incorporates content derived from FriendsQA, which remains under Apache 2.0 (original license and notice reproduced in `third_party_licenses/FriendsQA-APACHE-2.0.txt`). Dialogue excerpts remain subject to the underlying show rightsholders.

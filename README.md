@@ -63,7 +63,6 @@ Outputs land under `outputs/exp_one_<timestamp>/<model>/` with checkpoints, plot
 If you use the dataset or accompanying code, please cite the SocialNLI paper (citation forthcoming). A BibTeX entry will be added once the manuscript is public.
 
 ## License and acknowledgements
-- Original SocialNLI materials are licensed under the Apache License 2.0 (see `LICENSE`). `NOTICE` records attribution details and key modifications.
 - Derived transcripts originate from FriendsQA (Apache 2.0). The original FriendsQA license and notice appear in `third_party_licenses/FriendsQA-APACHE-2.0.txt`, and their attribution requirements are preserved in this release.
 - Television dialogue excerpts remain the property of their respective rightsholders ("Friends" © Warner Bros. Entertainment Inc.).
 - OpenAI, DeepSeek, Meta, and Qwen models are accessed through their respective APIs; abide by their terms of service when reproducing the experiments.
