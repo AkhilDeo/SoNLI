@@ -1,5 +1,5 @@
 *.env
-/.venv
+/.venv*
 random.txt
 .idea/*
 .DS_Store
@@ -9,3 +9,4 @@ __pycache__/
 *.lock
 logs/
 outputs/
+analysis/

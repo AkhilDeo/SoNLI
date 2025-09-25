@@ -2,15 +2,6 @@
 
 SocialNLI (SoNLI) is a dialogue-centric natural language inference benchmark that probes whether language and reasoning models can recover subtle social intent such as sarcasm, irony, and unstated motives. The corpus pairs multi-party television transcripts with free-form hypotheses, scalar plausibility judgments, and supporting/contradicting explanations collected from both humans and models. This repository accompanies the SocialNLI paper and provides the full data release, prompt templates, and experiment code used in the manuscript.
 
-## Repository map
-- `datasets/socialnli/` – primary dataset release (auto-labeled training split with 3.9k examples and 1.4k human-annotated examples).
-- `datasets/socialnli_sources/` – original FriendsQA sources plus intermediate filtered/augmented JSON used during curation.
-- `src/experiments/experiment_one/` – pipeline for generating counterfactual explanations and UNLI-style plausibility scores with different LLMs/LRMs.
-- `src/experiments/experiment_two/` – human evaluation summaries contrasting language and reasoning models on a 27-example subset.
-- `src/prompts/` – prompt programs used for filtering, inference generation, explanation drafting, and judging.
-- `src/utils/` – helper modules (OpenRouter client with rate limiting, UNLI scorer wrapper).
-- `outputs/` – sample outputs produced by the authors when running the experiments in September 2025.
-
 ## SocialNLI dataset release
 SocialNLI combines two complementary splits:
 - `auto.json` (3,920 items) – automatically generated inferences with counterfactual explanations and UNLI proxy scores.
@@ -19,9 +10,6 @@ SocialNLI combines two complementary splits:
 Each example contains the dialogue snippet, targeting question, inference hypothesis, metadata indicating whether it arose from chain-of-thought prompting, model-produced supporting and opposing explanations, judge model scores, and Bayes-style posteriors. The human split additionally records the raw slider score (`human_annotated_score`) and explanation text supplied by annotators.
 
 Detailed field documentation and loading tips for the JSON files live in `datasets/socialnli/README.md`.
-
-## Source data and intermediate assets
-The FriendsQA dataset (Apache 2.0) provides the base transcripts. We filtered, augmented, and re-questioned these dialogues to foreground sarcasm/irony phenomena before soliciting inferences and annotations. Intermediate artifacts—including filtered transcript lists and augmented question sets—are documented under `datasets/socialnli_sources/`.
 
 ## Experiments
 ### Experiment 1 – Counterfactual explanation generation
@@ -42,11 +30,12 @@ The second experiment contrasts three reasoning-focused models (o1, DeepSeek-R1,
 1. Create a Python 3.11 environment
 2. Install dependencies:
    ```bash
-   pip install -r requirements.txt
+   uv pip install -r requirements.txt
    ```
 3. Configure credentials for external models:
    - `OPENAI_API_KEY` (for GPT-4o family).
-   - `OPENROUTER_API_KEY`, optionally `OPENROUTER_API_BASE`, `HTTP_REFERER`, `X_TITLE`, `OPENROUTER_CALLS_PER_PAUSE`, `OPENROUTER_PAUSE_SECONDS`.
+   - `OPENROUTER_API_KEY`
+   - `OPENROUTER_API_BASE=https://openrouter.ai/api/v1`
 4. Optional: install `vllm` if you intend to run open-weight models locally via the `--inference-method huggingface` flag.
 
 Example run (OpenRouter hosted models, limited to 10 items):
@@ -58,6 +47,29 @@ python src/experiments/experiment_one/experiment_one.py \
   --checkpoint-interval 20
 ```
 Outputs land under `outputs/exp_one_<timestamp>/<model>/` with checkpoints, plots, and JSON results.
+
+## Generating new inference runs
+Recreate the SocialNLI inference sets before running experiments:
+```bash
+python src/dataset/generate_inferences.py \
+  --cot-model gpt-4o-mini \
+  --no-cot-model gpt-4o-mini \
+  --limit 5 \
+  --output-dir outputs/inference_smoke
+```
+Refer to `src/dataset/README.md` for provider-specific flags, rate limiting tips, and output structure.
+
+## Repository map
+- `datasets/socialnli/` – primary dataset release (auto-labeled training split with 3.9k examples and 1.4k human-annotated examples).
+- `datasets/socialnli_sources/` – original FriendsQA sources plus intermediate filtered/augmented JSON used during curation.
+- `src/experiments/experiment_one/` – pipeline for generating counterfactual explanations and UNLI-style plausibility scores with different LLMs/LRMs.
+- `src/experiments/experiment_two/` – human evaluation summaries contrasting language and reasoning models on a 27-example subset.
+- `src/prompts/` – prompt programs used for filtering, inference generation, explanation drafting, and judging.
+- `src/utils/` – helper modules (OpenRouter client with rate limiting, UNLI scorer wrapper).
+- `outputs/` – sample outputs produced by the authors when running the experiments in September 2025.
+
+## Source data and intermediate assets
+The FriendsQA dataset (Apache 2.0) provides the base transcripts. We filtered, augmented, and re-questioned these dialogues to foreground sarcasm/irony phenomena before soliciting inferences and annotations. Intermediate artifacts—including filtered transcript lists and augmented question sets—are documented under `datasets/socialnli_sources/`.
 
 ## Citation
 If you use the dataset or accompanying code, please cite the SocialNLI paper (citation forthcoming). A BibTeX entry will be added once the manuscript is public.

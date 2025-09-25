@@ -6,7 +6,7 @@ This directory houses the upstream transcripts and intermediate assets used whil
 - `friendsqa_original/` – original FriendsQA release files (`friendsqa_trn.json`, `friendsqa_dev.json`, `friendsqa_tst.json`) under Apache 2.0. Each item contains the raw dialogue snippet, question, and answer span metadata.
 - `curated/` – filtered and augmented subsets that isolate sarcasm/irony-centric scenes, along with newly phrased questions that explicitly target social nuance. Detailed descriptions for each JSON live in `curated/README.md`.
 
-## Curation process (high-level)
+## Curation process
 1. **Dialogue selection** – we started from FriendsQA and retained transcripts exhibiting sarcasm, irony, or related pragmatic phenomena. The filtering step leveraged the prompt in `src/prompts/classify_sarcasm_necessity_prompt.py` with DeepSeek-R1 as a judge.
 2. **Question augmentation** – for transcripts where the original FriendsQA question did not emphasise sarcasm/irony, we generated new questions using GPT-4o with prompts in `src/prompts/generate_sarcasm_irony_question_prompt.py` and `generate_sarcasm_irony_answer_prompt.py`.
 3. **Inference generation** – the curated transcripts and questions formed the input to the inference generation prompts (`inference_cot.py`, `inference_no_cot.py`), producing 10 hypotheses per (dialogue, question) pair.

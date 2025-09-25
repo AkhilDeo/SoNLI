@@ -45,24 +45,7 @@ A minimal example (truncated for brevity):
 }
 ```
 
-## Loading the data
-```python
-import json
-from pathlib import Path
-
-with Path("datasets/socialnli/eval.json").open() as fp:
-    eval_split = json.load(fp)
-
-print(len(eval_split))  # 1400
-print(eval_split[0]["inference"])
-```
-
 The JSON files contain UTF-8 text and can be parsed with standard Python tooling. Because some rationale strings include newline characters, do not expect TSV/CSV compatibility without additional escaping.
-
-## Recommended usage
-- Use `auto.json` for model training or prompt-based fine-tuning. It covers the full label spectrum and contains the counterfactual explanations needed to reproduce the Bayes scoring procedure.
-- Evaluate on `eval.json` by comparing predicted plausibility scores against `human_annotated_score` (MAE, Pearson, or thresholded accuracy). Human explanations may also be used for qualitative studies.
-- The raw judge messages allow you to swap in alternative scoring functions if desired. If you recompute scores, update `counterfactual_score` accordingly.
 
 ## Licensing
 This directory incorporates content derived from FriendsQA, which remains under Apache 2.0 (original license and notice reproduced in `third_party_licenses/FriendsQA-APACHE-2.0.txt`). Dialogue excerpts remain subject to the underlying show rightsholders.

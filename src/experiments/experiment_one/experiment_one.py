@@ -24,7 +24,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.globals import set_llm_cache
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from prompts.supporting_explanations_no_q import supporting_explanations_prompt_with_no_question
 from prompts.opposing_explanations_no_q import opposing_explanations_prompt_with_no_question
 from prompts.judge import scoring_prompt
@@ -35,7 +35,7 @@ try:
     VLLM_AVAILABLE = True
 except ImportError:
     VLLM_AVAILABLE = False
-    print("[WARN] vLLM not available. Install with: pip install vllm")
+    print("[WARN] vLLM not available. Install with: uv pip install vllm")
 
 # --- Updated Model Configurations ---
 EXPLANATION_MODELS_CONFIG = {
@@ -684,10 +684,10 @@ def main():
     # Load data
     print("Loading input data...")
     if args.eval_split:
-        input_file = "datasets/socialnli/socialnli_human_eval_split.json"
+        input_file = "datasets/socialnli/eval.json"
         print("[INFO] Using eval split dataset")
     else:
-        input_file = "datasets/socialnli/socialnli_main_split.json"
+        input_file = "datasets/socialnli/auto.json"
         print("[INFO] Using main split dataset")
     
     try:
