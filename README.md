@@ -1,5 +1,13 @@
 # SocialNLI: A Dialogue-Centric Social Inference Dataset
 
+<div align="center" style="line-height: 1;">
+
+[![HuggingFace](https://img.shields.io/badge/HuggingFace-FFAE1A?style=for-the-badge&logo=huggingface&logoColor=white)](https://huggingface.co/datasets/adeo1/SocialNLI)
+[![GitHub](https://img.shields.io/badge/GitHub-24292F?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AkhilDeo/SoNLI)
+
+</div>
+
+
 SocialNLI (SoNLI) is a dialogue-centric natural language inference benchmark that probes whether language and reasoning models can recover subtle social intent such as sarcasm, irony, and unstated motives. The corpus pairs multi-party television transcripts with free-form hypotheses, scalar plausibility judgments, and supporting/contradicting explanations collected from both humans and models. This repository accompanies the SocialNLI paper and provides the full data release, prompt templates, and experiment code used in the manuscript.
 
 ## SocialNLI dataset release
