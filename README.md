@@ -1,7 +1,8 @@
 # SocialNLI: A Dialogue-Centric Social Inference Dataset
 
 <div align="center" style="line-height: 1;">
-
+  
+[![arXiv](https://img.shields.io/badge/arXiv-2510.05458-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2510.05458)
 [![HuggingFace](https://img.shields.io/badge/HuggingFace-FFAE1A?style=for-the-badge&logo=huggingface&logoColor=white)](https://huggingface.co/datasets/adeo1/SocialNLI)
 [![GitHub](https://img.shields.io/badge/GitHub-24292F?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AkhilDeo/SoNLI)
 
